@@ -1,0 +1,78 @@
+﻿using System.Collections;
+using TMPro;
+using UnityEngine;
+using UnityEngine.UI;
+using DG.Tweening;
+using System.Collections.Generic;
+
+public class FinishWindow : MonoBehaviour, IInitializable, ISubscriber
+{
+    [SerializeField] private GameObject _panel;
+    [SerializeField] private TextMeshProUGUI _scoreText;
+
+    [SerializeField] private List<Transform> _transforms = new List<Transform>();
+
+    [SerializeField] private RectTransform _fadeIn;
+
+    private bool _isInitialized;
+
+    private void OnEnable()
+    {
+        if (!_isInitialized)
+            return;
+
+        SubscribeAll();
+    }
+    private void OnDisable()
+    {
+        UnsubscribeAll();
+    }
+    public void Initialize()
+    {
+        GetComponent<Canvas>().worldCamera = Camera.main;
+
+        Hide();
+
+        _isInitialized = true;
+    }
+    public void SubscribeAll()
+    {
+        GameState.Instance.GameFinished += Show;
+    }
+    public void UnsubscribeAll()
+    {
+        GameState.Instance.GameFinished -= Show;
+    }
+    private void Show()
+    {
+        _panel.SetActive(true);
+
+        foreach (Transform transform in _transforms)
+        {
+            transform.localScale = Vector3.zero;
+            transform.DOScale(1, Random.Range(0.2f, 0.7f)).SetEase(Ease.OutBack).SetLink(transform.gameObject);
+        }
+
+        _panel.GetComponent<CanvasGroup>().alpha = 0f;
+        _panel.GetComponent<CanvasGroup>().DOFade(1f, 0.6f).SetLink(_panel.gameObject);
+
+        _scoreText.text = PlayerScore.Instance.Score.ToString();
+    }
+    private void Hide()
+    {
+        _panel.SetActive(false);
+    }
+    public void OnRestartButtonClicked()
+    {
+        SceneLoader.Instance.LoadScene("Gameplay");
+    }
+    public void OnMenuButtonClicked()
+    {
+        _fadeIn.DOMoveY(0, 0.5f).SetLink(_fadeIn.gameObject);
+        Invoke("LoadMenu", 0.5f);
+    }
+    private void LoadMenu()
+    {
+        SceneLoader.Instance.LoadScene("Menu");
+    }
+}
